@@ -2217,10 +2217,7 @@ mod test_process_proposal {
         shell
             .wl_storage
             .storage
-            .write(
-                &balance_key,
-                Amount::native_whole(1000).try_to_vec().unwrap(),
-            )
+            .write(&balance_key, Amount::native_whole(1000).serialize_to_vec())
             .unwrap();
 
         let mut wrapper =

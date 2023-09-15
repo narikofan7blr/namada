@@ -11,6 +11,7 @@ use async_trait::async_trait;
 // use async_std::io::prelude::WriteExt;
 // use async_std::io::{self};
 use borsh::{BorshDeserialize, BorshSerialize};
+use borsh_ext::BorshSerializeExt;
 use itertools::Either;
 use masp_primitives::asset_type::AssetType;
 #[cfg(feature = "mainnet")]
@@ -78,7 +79,6 @@ use crate::types::token::{
     Transfer, HEAD_TX_KEY, PIN_KEY_PREFIX, TX_KEY_PREFIX,
 };
 use crate::types::transaction::{EllipticCurve, PairingEngine, WrapperTx};
-
 /// Env var to point to a dir with MASP parameters. When not specified,
 /// the default OS specific path is used.
 pub const ENV_VAR_MASP_PARAMS_DIR: &str = "NAMADA_MASP_PARAMS_DIR";
@@ -563,7 +563,7 @@ pub type TransactionDelta = HashMap<ViewingKey, MaspAmount>;
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 pub struct ShieldedContext<U: ShieldedUtils> {
     /// Location where this shielded context is saved
-    #[borsh_skip]
+    #[borsh(skip)]
     pub utils: U,
     /// The last transaction index to be processed in this context
     pub last_txidx: u64,
@@ -1582,12 +1582,8 @@ impl<U: ShieldedUtils> ShieldedContext<U> {
                         "source address should be transparent".to_string(),
                     )
                 })?
-                .try_to_vec()
-                .map_err(|_| {
-                    Error::from(EncodingError::Encode(
-                        "source address".to_string(),
-                    ))
-                })?;
+                .serialize_to_vec();
+
             let hash = ripemd::Ripemd160::digest(sha2::Sha256::digest(
                 source_enc.as_ref(),
             ));
@@ -1631,12 +1627,7 @@ impl<U: ShieldedUtils> ShieldedContext<U> {
                         "source address should be transparent".to_string(),
                     )
                 })?
-                .try_to_vec()
-                .map_err(|_| {
-                    Error::from(EncodingError::Encode(
-                        "target address".to_string(),
-                    ))
-                })?;
+                .serialize_to_vec();
             let hash = ripemd::Ripemd160::digest(sha2::Sha256::digest(
                 target_enc.as_ref(),
             ));
@@ -1727,10 +1718,9 @@ impl<U: ShieldedUtils> ShieldedContext<U> {
 
         let builder_clone = builder.clone().map_builder(WalletMap);
         #[cfg(feature = "testing")]
-        let builder_bytes = BorshSerialize::try_to_vec(&builder_clone)
-            .map_err(|e| {
-                Error::from(EncodingError::Conversion(e.to_string()))
-            })?;
+        let builder_bytes = borsh::to_vec(&builder_clone).map_err(|e| {
+            Error::from(EncodingError::Conversion(e.to_string()))
+        })?;
 
         let build_transfer =
             || -> Result<ShieldedTransfer, builder::Error<std::convert::Infallible>> {
@@ -1790,12 +1780,9 @@ impl<U: ShieldedUtils> ShieldedContext<U> {
                 // Build and return the constructed transaction
                 let built = build_transfer()?;
                 if let LoadOrSaveProofs::Save = load_or_save {
-                    let built_bytes = BorshSerialize::try_to_vec(&built)
-                        .map_err(|e| {
-                            Error::from(EncodingError::Conversion(
-                                e.to_string(),
-                            ))
-                        })?;
+                    let built_bytes = borsh::to_vec(&built).map_err(|e| {
+                        Error::from(EncodingError::Conversion(e.to_string()))
+                    })?;
                     tokio::fs::write(&saved_filepath, built_bytes)
                         .await
                         .map_err(|e| Error::Other(e.to_string()))?;
@@ -1963,12 +1950,8 @@ pub fn make_asset_type(
 ) -> Result<AssetType, Error> {
     // Typestamp the chosen token with the current epoch
     let token_bytes = match epoch {
-        None => (token, denom)
-            .try_to_vec()
-            .map_err(|e| Error::from(EncodingError::Encode(e.to_string())))?,
-        Some(epoch) => (token, denom, epoch.0)
-            .try_to_vec()
-            .map_err(|e| Error::from(EncodingError::Encode(e.to_string())))?,
+        None => (token, denom).serialize_to_vec(),
+        Some(epoch) => (token, denom, epoch.0).serialize_to_vec(),
     };
     // Generate the unique asset identifier from the unique token address
     AssetType::new(token_bytes.as_ref())

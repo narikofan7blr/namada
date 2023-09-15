@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
 
-use borsh::BorshSerialize;
+use borsh_ext::BorshSerializeExt;
 use ethbridge_bridge_contract::Bridge;
 use ethers::providers::Middleware;
 use namada_core::ledger::eth_bridge::storage::wrapped_erc20s;
@@ -268,7 +268,7 @@ where
         }
     }
 
-    let data = args.try_to_vec().unwrap();
+    let data = args.serialize_to_vec();
     let response = RPC
         .shell()
         .eth_bridge()

@@ -588,7 +588,8 @@ where
 mod test_bridge_pool_vp {
     use std::env::temp_dir;
 
-    use borsh::BorshSerialize;
+    use borsh::BorshDeserialize;
+    use borsh_ext::BorshSerializeExt;
     use namada_core::ledger::eth_bridge::storage::bridge_pool::get_signed_root_key;
     use namada_core::ledger::gas::TxGasMeter;
     use namada_core::types::address;
@@ -703,11 +704,11 @@ mod test_bridge_pool_vp {
         let mut writelog = WriteLog::default();
         // setup the initial bridge pool storage
         writelog
-            .write(&get_signed_root_key(), Hash([0; 32]).try_to_vec().unwrap())
+            .write(&get_signed_root_key(), Hash([0; 32]).serialize_to_vec())
             .expect("Test failed");
         let transfer = initial_pool();
         writelog
-            .write(&get_pending_key(&transfer), transfer.try_to_vec().unwrap())
+            .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
             .expect("Test failed");
         // whitelist wnam
         let key = whitelist::Key {
@@ -716,7 +717,7 @@ mod test_bridge_pool_vp {
         }
         .into();
         writelog
-            .write(&key, true.try_to_vec().unwrap())
+            .write(&key, true.serialize_to_vec())
             .expect("Test failed");
         let key = whitelist::Key {
             asset: wnam(),
@@ -724,7 +725,7 @@ mod test_bridge_pool_vp {
         }
         .into();
         writelog
-            .write(&key, Amount::max().try_to_vec().unwrap())
+            .write(&key, Amount::max().serialize_to_vec())
             .expect("Test failed");
         // set up users with ERC20 and NUT balances
         update_balances(
@@ -790,10 +791,7 @@ mod test_bridge_pool_vp {
             // write the changes to the log
             let account_key = balance_key(&nam(), &balance.owner);
             write_log
-                .write(
-                    &account_key,
-                    updated_balance.try_to_vec().expect("Test failed"),
-                )
+                .write(&account_key, updated_balance.serialize_to_vec())
                 .expect("Test failed");
 
             // changed keys
@@ -836,10 +834,10 @@ mod test_bridge_pool_vp {
 
             // write the changes to the log
             write_log
-                .write(&account_key, new_gas_balance.try_to_vec().unwrap())
+                .write(&account_key, new_gas_balance.serialize_to_vec())
                 .expect("Test failed");
             write_log
-                .write(&token_key, new_token_balance.try_to_vec().unwrap())
+                .write(&token_key, new_token_balance.serialize_to_vec())
                 .expect("Test failed");
 
             // return the keys changed
@@ -1010,7 +1008,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1031,7 +1029,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1052,7 +1050,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1073,7 +1071,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1095,7 +1093,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1116,7 +1114,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1137,7 +1135,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1158,7 +1156,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1205,7 +1203,7 @@ mod test_bridge_pool_vp {
                         payer: bertha_address(),
                     },
                 };
-                log.write(&get_pending_key(transfer), t.try_to_vec().unwrap())
+                log.write(&get_pending_key(transfer), t.serialize_to_vec())
                     .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
             },
@@ -1237,7 +1235,7 @@ mod test_bridge_pool_vp {
                         payer: bertha_address(),
                     },
                 };
-                log.write(&get_pending_key(&t), transfer.try_to_vec().unwrap())
+                log.write(&get_pending_key(&t), transfer.serialize_to_vec())
                     .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
             },
@@ -1257,7 +1255,7 @@ mod test_bridge_pool_vp {
             |transfer, log| {
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([
@@ -1284,10 +1282,7 @@ mod test_bridge_pool_vp {
         let mut keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1369,10 +1364,7 @@ mod test_bridge_pool_vp {
         let mut keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1437,10 +1429,7 @@ mod test_bridge_pool_vp {
         let mut keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1451,9 +1440,7 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &account_key,
-                Amount::from(BERTHA_WEALTH - 200)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(BERTHA_WEALTH - 200).serialize_to_vec(),
             )
             .expect("Test failed");
         assert!(keys_changed.insert(account_key));
@@ -1462,9 +1449,7 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &bp_account_key,
-                Amount::from(ESCROWED_AMOUNT + 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(ESCROWED_AMOUNT + 100).serialize_to_vec(),
             )
             .expect("Test failed");
         assert!(keys_changed.insert(bp_account_key));
@@ -1472,9 +1457,7 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &eb_account_key,
-                Amount::from(ESCROWED_AMOUNT + 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(ESCROWED_AMOUNT + 100).serialize_to_vec(),
             )
             .expect("Test failed");
         assert!(keys_changed.insert(eb_account_key));
@@ -1531,10 +1514,7 @@ mod test_bridge_pool_vp {
         let keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1545,9 +1525,7 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &account_key,
-                Amount::from(BERTHA_WEALTH - 200)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(BERTHA_WEALTH - 200).serialize_to_vec(),
             )
             .expect("Test failed");
         let bp_account_key = balance_key(&nam(), &BRIDGE_POOL_ADDRESS);
@@ -1555,17 +1533,12 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &bp_account_key,
-                Amount::from(ESCROWED_AMOUNT + 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(ESCROWED_AMOUNT + 100).serialize_to_vec(),
             )
             .expect("Test failed");
         wl_storage
             .write_log
-            .write(
-                &eb_account_key,
-                Amount::from(10).try_to_vec().expect("Test failed"),
-            )
+            .write(&eb_account_key, Amount::from(10).serialize_to_vec())
             .expect("Test failed");
         let verifiers = BTreeSet::default();
 
@@ -1600,10 +1573,7 @@ mod test_bridge_pool_vp {
         let eb_account_key =
             balance_key(&nam(), &Address::Internal(InternalAddress::EthBridge));
         wl_storage
-            .write_bytes(
-                &eb_account_key,
-                Amount::default().try_to_vec().expect("Test failed"),
-            )
+            .write_bytes(&eb_account_key, Amount::default().serialize_to_vec())
             .expect("Test failed");
         // initialize the gas payers account
         let gas_payer_balance_key =
@@ -1611,9 +1581,7 @@ mod test_bridge_pool_vp {
         wl_storage
             .write_bytes(
                 &gas_payer_balance_key,
-                Amount::from(BERTHA_WEALTH)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(BERTHA_WEALTH).serialize_to_vec(),
             )
             .expect("Test failed");
         wl_storage.write_log.commit_tx();
@@ -1639,10 +1607,7 @@ mod test_bridge_pool_vp {
         let keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1653,18 +1618,14 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &account_key,
-                Amount::from(BERTHA_WEALTH - 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(BERTHA_WEALTH - 100).serialize_to_vec(),
             )
             .expect("Test failed");
         wl_storage
             .write_log
             .write(
                 &gas_payer_balance_key,
-                Amount::from(BERTHA_WEALTH - 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(BERTHA_WEALTH - 100).serialize_to_vec(),
             )
             .expect("Test failed");
         let bp_account_key = balance_key(&nam(), &BRIDGE_POOL_ADDRESS);
@@ -1672,17 +1633,12 @@ mod test_bridge_pool_vp {
             .write_log
             .write(
                 &bp_account_key,
-                Amount::from(ESCROWED_AMOUNT + 100)
-                    .try_to_vec()
-                    .expect("Test failed"),
+                Amount::from(ESCROWED_AMOUNT + 100).serialize_to_vec(),
             )
             .expect("Test failed");
         wl_storage
             .write_log
-            .write(
-                &eb_account_key,
-                Amount::from(10).try_to_vec().expect("Test failed"),
-            )
+            .write(&eb_account_key, Amount::from(10).serialize_to_vec())
             .expect("Test failed");
         let verifiers = BTreeSet::default();
         // create the data to be given to the vp
@@ -1731,10 +1687,7 @@ mod test_bridge_pool_vp {
         let mut keys_changed = {
             wl_storage
                 .write_log
-                .write(
-                    &get_pending_key(&transfer),
-                    transfer.try_to_vec().unwrap(),
-                )
+                .write(&get_pending_key(&transfer), transfer.serialize_to_vec())
                 .unwrap();
             BTreeSet::from([get_pending_key(&transfer)])
         };
@@ -1819,7 +1772,7 @@ mod test_bridge_pool_vp {
                 transfer.transfer.asset = wnam();
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])
@@ -1841,7 +1794,7 @@ mod test_bridge_pool_vp {
                 transfer.transfer.asset = wnam();
                 log.write(
                     &get_pending_key(transfer),
-                    transfer.try_to_vec().unwrap(),
+                    transfer.serialize_to_vec(),
                 )
                 .unwrap();
                 BTreeSet::from([get_pending_key(transfer)])

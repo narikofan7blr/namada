@@ -569,7 +569,7 @@ fn get_gas_rules() -> wasm_instrument::gas_metering::ConstantCostRules {
 
 #[cfg(test)]
 mod tests {
-    use borsh::BorshSerialize;
+    use borsh_ext::BorshSerializeExt;
     use itertools::Either;
     use namada_test_utils::TestWasms;
     use test_log::test;
@@ -648,7 +648,7 @@ mod tests {
         let code_hash = Hash::sha256(&tx_code);
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
-        let code_len = (tx_code.len() as u64).try_to_vec().unwrap();
+        let code_len = (tx_code.len() as u64).serialize_to_vec();
         write_log.write(&key, tx_code.clone()).unwrap();
         write_log.write(&len_key, code_len).unwrap();
 
@@ -657,7 +657,7 @@ mod tests {
 
         // Allocating `2^23` (8 MiB) should be below the memory limit and
         // shouldn't fail
-        let tx_data = 2_usize.pow(23).try_to_vec().unwrap();
+        let tx_data = 2_usize.pow(23).serialize_to_vec();
         let (mut vp_cache, _) =
             wasm::compilation_cache::common::testing::cache();
         let (mut tx_cache, _) =
@@ -678,7 +678,7 @@ mod tests {
 
         // Allocating `2^24` (16 MiB) should be above the memory limit and
         // should fail
-        let tx_data = 2_usize.pow(24).try_to_vec().unwrap();
+        let tx_data = 2_usize.pow(24).serialize_to_vec();
         let mut outer_tx = Tx::from_type(TxType::Raw);
         outer_tx.set_code(Code::new(tx_code));
         outer_tx.set_data(Data::new(tx_data));
@@ -717,7 +717,7 @@ mod tests {
         let code_hash = Hash::sha256(&vp_eval);
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
-        let code_len = (vp_eval.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_eval.len() as u64).serialize_to_vec();
         storage.write(&key, vp_eval).unwrap();
         storage.write(&len_key, code_len).unwrap();
         // This code will allocate memory of the given size
@@ -726,7 +726,7 @@ mod tests {
         let limit_code_hash = Hash::sha256(&vp_memory_limit);
         let key = Key::wasm_code(&limit_code_hash);
         let len_key = Key::wasm_code_len(&limit_code_hash);
-        let code_len = (vp_memory_limit.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_memory_limit.len() as u64).serialize_to_vec();
         storage.write(&key, vp_memory_limit).unwrap();
         storage.write(&len_key, code_len).unwrap();
 
@@ -735,7 +735,7 @@ mod tests {
 
         // Allocating `2^23` (8 MiB) should be below the memory limit and
         // shouldn't fail
-        let input = 2_usize.pow(23).try_to_vec().unwrap();
+        let input = 2_usize.pow(23).serialize_to_vec();
 
         let mut tx = Tx::new(storage.chain_id.clone(), None);
         tx.add_code(vec![]).add_serialized_data(input);
@@ -770,7 +770,7 @@ mod tests {
 
         // Allocating `2^24` (16 MiB) should be above the memory limit and
         // should fail
-        let input = 2_usize.pow(24).try_to_vec().unwrap();
+        let input = 2_usize.pow(24).serialize_to_vec();
         let mut tx = Tx::new(storage.chain_id.clone(), None);
         tx.add_code(vec![]).add_data(input);
 
@@ -822,7 +822,7 @@ mod tests {
         let vp_code = TestWasms::VpMemoryLimit.read_bytes();
         // store the wasm code
         let code_hash = Hash::sha256(&vp_code);
-        let code_len = (vp_code.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_code.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         storage.write(&key, vp_code).unwrap();
@@ -833,7 +833,7 @@ mod tests {
 
         // Allocating `2^23` (8 MiB) should be below the memory limit and
         // shouldn't fail
-        let tx_data = 2_usize.pow(23).try_to_vec().unwrap();
+        let tx_data = 2_usize.pow(23).serialize_to_vec();
         let mut outer_tx = Tx::from_type(TxType::Raw);
         outer_tx.header.chain_id = storage.chain_id.clone();
         outer_tx.set_data(Data::new(tx_data));
@@ -857,7 +857,7 @@ mod tests {
 
         // Allocating `2^24` (16 MiB) should be above the memory limit and
         // should fail
-        let tx_data = 2_usize.pow(24).try_to_vec().unwrap();
+        let tx_data = 2_usize.pow(24).serialize_to_vec();
         let mut outer_tx = Tx::from_type(TxType::Raw);
         outer_tx.header.chain_id = storage.chain_id.clone();
         outer_tx.set_data(Data::new(tx_data));
@@ -894,7 +894,7 @@ mod tests {
         let code_hash = Hash::sha256(&tx_no_op);
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
-        let code_len = (tx_no_op.len() as u64).try_to_vec().unwrap();
+        let code_len = (tx_no_op.len() as u64).serialize_to_vec();
         write_log.write(&key, tx_no_op.clone()).unwrap();
         write_log.write(&len_key, code_len).unwrap();
 
@@ -959,7 +959,7 @@ mod tests {
         let code_hash = Hash::sha256(&vp_code);
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
-        let code_len = (vp_code.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_code.len() as u64).serialize_to_vec();
         storage.write(&key, vp_code).unwrap();
         storage.write(&len_key, code_len).unwrap();
 
@@ -1023,7 +1023,7 @@ mod tests {
         let tx_read_key = TestWasms::TxReadStorageKey.read_bytes();
         // store the wasm code
         let code_hash = Hash::sha256(&tx_read_key);
-        let code_len = (tx_read_key.len() as u64).try_to_vec().unwrap();
+        let code_len = (tx_read_key.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         write_log.write(&key, tx_read_key.clone()).unwrap();
@@ -1039,8 +1039,8 @@ mod tests {
         // Write the value that should be read by the tx into the storage. When
         // writing directly to storage, the value has to be encoded with
         // Borsh.
-        storage.write(&key, value.try_to_vec().unwrap()).unwrap();
-        let tx_data = key.try_to_vec().unwrap();
+        storage.write(&key, value.serialize_to_vec()).unwrap();
+        let tx_data = key.serialize_to_vec();
         let (mut vp_cache, _) =
             wasm::compilation_cache::common::testing::cache();
         let (mut tx_cache, _) =
@@ -1080,7 +1080,7 @@ mod tests {
         let vp_read_key = TestWasms::VpReadStorageKey.read_bytes();
         // store the wasm code
         let code_hash = Hash::sha256(&vp_read_key);
-        let code_len = (vp_read_key.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_read_key.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         storage.write(&key, vp_read_key).unwrap();
@@ -1096,8 +1096,8 @@ mod tests {
         // Write the value that should be read by the tx into the storage. When
         // writing directly to storage, the value has to be encoded with
         // Borsh.
-        storage.write(&key, value.try_to_vec().unwrap()).unwrap();
-        let tx_data = key.try_to_vec().unwrap();
+        storage.write(&key, value.serialize_to_vec()).unwrap();
+        let tx_data = key.serialize_to_vec();
         let mut outer_tx = Tx::from_type(TxType::Raw);
         outer_tx.header.chain_id = storage.chain_id.clone();
         outer_tx.set_data(Data::new(tx_data));
@@ -1142,7 +1142,7 @@ mod tests {
         let vp_eval = TestWasms::VpEval.read_bytes();
         // store the wasm code
         let code_hash = Hash::sha256(&vp_eval);
-        let code_len = (vp_eval.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_eval.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         storage.write(&key, vp_eval).unwrap();
@@ -1151,7 +1151,7 @@ mod tests {
         let vp_read_key = TestWasms::VpReadStorageKey.read_bytes();
         // store the wasm code
         let read_code_hash = Hash::sha256(&vp_read_key);
-        let code_len = (vp_read_key.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_read_key.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&read_code_hash);
         let len_key = Key::wasm_code_len(&read_code_hash);
         storage.write(&key, vp_read_key).unwrap();
@@ -1167,8 +1167,8 @@ mod tests {
         // Write the value that should be read by the tx into the storage. When
         // writing directly to storage, the value has to be encoded with
         // Borsh.
-        storage.write(&key, value.try_to_vec().unwrap()).unwrap();
-        let input = 2_usize.pow(23).try_to_vec().unwrap();
+        storage.write(&key, value.serialize_to_vec()).unwrap();
+        let input = 2_usize.pow(23).serialize_to_vec();
 
         let mut tx = Tx::new(storage.chain_id.clone(), None);
         tx.add_code(vec![]).add_serialized_data(input);
@@ -1247,7 +1247,7 @@ mod tests {
 
         // store the tx code
         let code_hash = Hash::sha256(&tx_code);
-        let code_len = (tx_code.len() as u64).try_to_vec().unwrap();
+        let code_len = (tx_code.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         write_log.write(&key, tx_code).unwrap();
@@ -1310,7 +1310,7 @@ mod tests {
         let (vp_cache, _) = wasm::compilation_cache::common::testing::cache();
         // store the vp code
         let code_hash = Hash::sha256(&vp_code);
-        let code_len = (vp_code.len() as u64).try_to_vec().unwrap();
+        let code_len = (vp_code.len() as u64).serialize_to_vec();
         let key = Key::wasm_code(&code_hash);
         let len_key = Key::wasm_code_len(&code_hash);
         storage.write(&key, vp_code).unwrap();

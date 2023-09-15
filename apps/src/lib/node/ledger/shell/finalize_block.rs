@@ -1234,10 +1234,7 @@ mod test_finalize_block {
         shell
             .wl_storage
             .storage
-            .write(
-                &balance_key,
-                Amount::native_whole(1000).try_to_vec().unwrap(),
-            )
+            .write(&balance_key, Amount::native_whole(1000).serialize_to_vec())
             .unwrap();
 
         // create some wrapper txs
@@ -1426,10 +1423,7 @@ mod test_finalize_block {
         shell
             .wl_storage
             .storage
-            .write(
-                &balance_key,
-                Amount::native_whole(1000).try_to_vec().unwrap(),
-            )
+            .write(&balance_key, Amount::native_whole(1000).serialize_to_vec())
             .unwrap();
 
         // create two decrypted txs
@@ -1679,7 +1673,7 @@ mod test_finalize_block {
             &KeccakHash([1; 32]),
             3.into(),
         );
-        let value = BlockHeight(4).try_to_vec().expect("Test failed");
+        let value = BlockHeight(4).serialize_to_vec();
         shell
             .wl_storage
             .storage
@@ -1690,10 +1684,7 @@ mod test_finalize_block {
         shell
             .wl_storage
             .storage
-            .write(
-                &get_nonce_key(),
-                Uint::from(1).try_to_vec().expect("Test failed"),
-            )
+            .write(&get_nonce_key(), Uint::from(1).serialize_to_vec())
             .expect("Test failed");
         let (tx, action) = craft_tx(&mut shell);
         let processed_tx = ProcessedTx {
@@ -1879,10 +1870,7 @@ mod test_finalize_block {
         shell
             .wl_storage
             .storage
-            .write(
-                &balance_key,
-                Amount::native_whole(1000).try_to_vec().unwrap(),
-            )
+            .write(&balance_key, Amount::native_whole(1000).serialize_to_vec())
             .unwrap();
 
         // Add a proposal to be executed on next epoch change.

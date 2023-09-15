@@ -3,6 +3,7 @@
 use std::fmt::Display;
 
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use borsh_ext::BorshSerializeExt;
 use namada_macros::StorageKeys;
 use serde::{Deserialize, Serialize};
 
@@ -132,7 +133,7 @@ impl Challenge {
             "Looking for a solution with difficulty {}...",
             self.params.difficulty
         );
-        let challenge_bytes = self.try_to_vec().expect("Serializable");
+        let challenge_bytes = self.serialize_to_vec();
         let challenge_len = challenge_bytes.len();
         let mut stdout = std::io::stdout();
 
@@ -150,8 +151,7 @@ impl Challenge {
         'outer: loop {
             stdout.flush().unwrap();
             print!("\rChecking {}.", maybe_solution);
-            let solution_bytes =
-                maybe_solution.try_to_vec().expect("Serializable");
+            let solution_bytes = maybe_solution.serialize_to_vec();
             // ...and the second part from `solution_bytes`
             for (old, new) in
                 bytes[challenge_len..].iter_mut().zip(&solution_bytes[..])
@@ -251,8 +251,8 @@ impl Solution {
             source,
             params: self.params.clone(),
         };
-        let mut bytes = challenge.try_to_vec().expect("Serializable");
-        let mut solution_bytes = self.value.try_to_vec().expect("Serializable");
+        let mut bytes = challenge.serialize_to_vec();
+        let mut solution_bytes = self.value.serialize_to_vec();
         bytes.append(&mut solution_bytes);
         let hash = Hash::sha256(&bytes);
 
@@ -485,7 +485,7 @@ mod test {
     #[test]
     fn test_solution_val_bytes_len() {
         let val: SolutionValue = 10;
-        let bytes = val.try_to_vec().unwrap();
+        let bytes = val.serialize_to_vec();
         assert_eq!(bytes.len(), SOLUTION_VAL_BYTES_LEN);
     }
 }

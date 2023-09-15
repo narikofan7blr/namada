@@ -139,7 +139,7 @@ where
 mod tests {
     use std::collections::BTreeSet;
 
-    use borsh::BorshSerialize;
+    use borsh_ext::BorshSerializeExt;
     use namada_core::ledger::gas::TxGasMeter;
 
     use super::*;
@@ -186,14 +186,14 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .storage
-            .write(&sender_key, amount.try_to_vec().unwrap())
+            .write(&sender_key, amount.serialize_to_vec())
             .expect("write failed");
 
         // transfer 10
         let amount = Amount::native_whole(90);
         wl_storage
             .write_log
-            .write(&sender_key, amount.try_to_vec().unwrap())
+            .write(&sender_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(sender_key);
         let receiver = established_address_2();
@@ -201,7 +201,7 @@ mod tests {
         let amount = Amount::native_whole(10);
         wl_storage
             .write_log
-            .write(&receiver_key, amount.try_to_vec().unwrap())
+            .write(&receiver_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(receiver_key);
 
@@ -242,14 +242,14 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .storage
-            .write(&sender_key, amount.try_to_vec().unwrap())
+            .write(&sender_key, amount.serialize_to_vec())
             .expect("write failed");
 
         // transfer 10
         let amount = Amount::native_whole(90);
         wl_storage
             .write_log
-            .write(&sender_key, amount.try_to_vec().unwrap())
+            .write(&sender_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(sender_key);
         let receiver = established_address_2();
@@ -258,7 +258,7 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&receiver_key, amount.try_to_vec().unwrap())
+            .write(&receiver_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(receiver_key);
 
@@ -302,14 +302,14 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&target_key, amount.try_to_vec().unwrap())
+            .write(&target_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(target_key);
         let minted_key = minted_balance_key(&token);
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&minted_key, amount.try_to_vec().unwrap())
+            .write(&minted_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minted_key);
 
@@ -318,7 +318,7 @@ mod tests {
         let minter_key = minter_key(&token);
         wl_storage
             .write_log
-            .write(&minter_key, minter.try_to_vec().unwrap())
+            .write(&minter_key, minter.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minter_key);
 
@@ -362,14 +362,14 @@ mod tests {
         let amount = Amount::native_whole(1000);
         wl_storage
             .write_log
-            .write(&target_key, amount.try_to_vec().unwrap())
+            .write(&target_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(target_key);
         let minted_key = minted_balance_key(&nam());
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&minted_key, amount.try_to_vec().unwrap())
+            .write(&minted_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minted_key);
 
@@ -378,7 +378,7 @@ mod tests {
         let minter_key = minter_key(&nam());
         wl_storage
             .write_log
-            .write(&minter_key, minter.try_to_vec().unwrap())
+            .write(&minter_key, minter.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minter_key);
 
@@ -424,14 +424,14 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&target_key, amount.try_to_vec().unwrap())
+            .write(&target_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(target_key);
         let minted_key = minted_balance_key(&token);
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&minted_key, amount.try_to_vec().unwrap())
+            .write(&minted_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minted_key);
 
@@ -477,14 +477,14 @@ mod tests {
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&target_key, amount.try_to_vec().unwrap())
+            .write(&target_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(target_key);
         let minted_key = minted_balance_key(&token);
         let amount = Amount::native_whole(100);
         wl_storage
             .write_log
-            .write(&minted_key, amount.try_to_vec().unwrap())
+            .write(&minted_key, amount.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minted_key);
 
@@ -493,7 +493,7 @@ mod tests {
         let minter_key = minter_key(&token);
         wl_storage
             .write_log
-            .write(&minter_key, minter.try_to_vec().unwrap())
+            .write(&minter_key, minter.serialize_to_vec())
             .expect("write failed");
         keys_changed.insert(minter_key);
 
@@ -534,7 +534,7 @@ mod tests {
         let minter = established_address_1();
         wl_storage
             .write_log
-            .write(&minter_key, minter.try_to_vec().unwrap())
+            .write(&minter_key, minter.serialize_to_vec())
             .expect("write failed");
 
         keys_changed.insert(minter_key);
@@ -579,7 +579,7 @@ mod tests {
         .unwrap();
         wl_storage
             .write_log
-            .write(&key, 0.try_to_vec().unwrap())
+            .write(&key, 0.serialize_to_vec())
             .expect("write failed");
 
         keys_changed.insert(key);

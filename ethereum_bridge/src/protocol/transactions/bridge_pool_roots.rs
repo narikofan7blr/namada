@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use borsh::BorshSerialize;
+use borsh_ext::BorshSerializeExt;
 use eyre::Result;
 use namada_core::ledger::eth_bridge::storage::bridge_pool::get_signed_root_key;
 use namada_core::ledger::storage::{DBIter, StorageHasher, WlStorage, DB};
@@ -19,7 +19,6 @@ use crate::protocol::transactions::{utils, votes, ChangedKeys};
 use crate::storage::eth_bridge_queries::EthBridgeQueries;
 use crate::storage::proof::BridgePoolRootProof;
 use crate::storage::vote_tallies::{self, BridgePoolRoot};
-
 /// Applies a tally of signatures on over the Ethereum
 /// bridge pool root and nonce. Note that every signature
 /// passed into this function will be for the same
@@ -66,9 +65,7 @@ where
         wl_storage
             .write_bytes(
                 &get_signed_root_key(),
-                (proof, root_height)
-                    .try_to_vec()
-                    .expect("Serializing a Bridge pool root shouldn't fail."),
+                (proof, root_height).serialize_to_vec(),
             )
             .expect(
                 "Writing a signed bridge pool root to storage should not fail.",
@@ -188,7 +185,7 @@ where
 mod test_apply_bp_roots_to_storage {
     use std::collections::BTreeSet;
 
-    use borsh::{BorshDeserialize, BorshSerialize};
+    use borsh::BorshDeserialize;
     use namada_core::ledger::eth_bridge::storage::bridge_pool::{
         get_key_from_hash, get_nonce_key,
     };
@@ -246,7 +243,7 @@ mod test_apply_bp_roots_to_storage {
             &KeccakHash([1; 32]),
             100.into(),
         );
-        let value = BlockHeight(101).try_to_vec().expect("Test failed");
+        let value = BlockHeight(101).serialize_to_vec();
         wl_storage
             .storage
             .block
@@ -254,10 +251,7 @@ mod test_apply_bp_roots_to_storage {
             .update(&get_key_from_hash(&KeccakHash([1; 32])), value)
             .expect("Test failed");
         wl_storage
-            .write_bytes(
-                &get_nonce_key(),
-                Uint::from(42).try_to_vec().expect("Test failed"),
-            )
+            .write_bytes(&get_nonce_key(), Uint::from(42).serialize_to_vec())
             .expect("Test failed");
         TestPackage {
             validators: [validator_a, validator_b, validator_c],
