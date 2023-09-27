@@ -926,7 +926,7 @@ where
         tx_bytes: &[u8],
         temp_wl_storage: &mut TempWlStorage<D, H>,
     ) -> Result<()> {
-        let inner_tx_hash = wrapper.raw_header_hash();
+        let inner_tx_hash = wrapper.decrypted_header_hash();
         let inner_hash_key =
             replay_protection::get_replay_protection_key(&inner_tx_hash);
         if temp_wl_storage
@@ -1253,7 +1253,7 @@ where
                 }
 
                 // Replay protection check
-                let inner_tx_hash = tx.raw_header_hash();
+                let inner_tx_hash = tx.decrypted_header_hash();
                 let inner_hash_key =
                     replay_protection::get_replay_protection_key(
                         &inner_tx_hash,
@@ -2492,7 +2492,7 @@ mod tests {
             )
         );
 
-        let inner_tx_hash = wrapper.raw_header_hash();
+        let inner_tx_hash = wrapper.decrypted_header_hash();
         // Write inner hash in storage
         let inner_hash_key =
             replay_protection::get_replay_protection_key(&inner_tx_hash);

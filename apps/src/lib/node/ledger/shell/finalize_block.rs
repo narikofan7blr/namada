@@ -213,7 +213,7 @@ where
                         .pop()
                         .expect("Missing wrapper tx in queue")
                         .tx
-                        .raw_header_hash();
+                        .decrypted_header_hash();
                     let tx_hash_key =
                         replay_protection::get_replay_protection_key(&tx_hash);
                     self.wl_storage
@@ -321,7 +321,7 @@ where
 
                         (
                             event,
-                            Some(tx_in_queue.tx.raw_header_hash()),
+                            Some(tx_in_queue.tx.decrypted_header_hash()),
                             TxGasMeter::new_from_sub_limit(tx_in_queue.gas),
                             None,
                         )
@@ -2265,11 +2265,8 @@ mod test_finalize_block {
         let wrapper_hash_key = replay_protection::get_replay_protection_key(
             &wrapper_tx.header_hash(),
         );
-        let mut decrypted_tx = wrapper_tx;
-
-        decrypted_tx.update_header(TxType::Raw);
         let decrypted_hash_key = replay_protection::get_replay_protection_key(
-            &decrypted_tx.header_hash(),
+            &wrapper_tx.decrypted_header_hash(),
         );
 
         // merkle tree root before finalize_block
@@ -2355,7 +2352,7 @@ mod test_finalize_block {
 
         // Write inner hash in storage
         let inner_hash_key = replay_protection::get_replay_protection_key(
-            &wrapper_tx.raw_header_hash(),
+            &wrapper_tx.decrypted_header_hash(),
         );
         shell
             .wl_storage
@@ -2432,7 +2429,7 @@ mod test_finalize_block {
             &wrapper.header_hash(),
         );
         let inner_hash_key = replay_protection::get_replay_protection_key(
-            &wrapper.raw_header_hash(),
+            &wrapper.decrypted_header_hash(),
         );
 
         let processed_tx = ProcessedTx {

@@ -721,7 +721,8 @@ where
                 metadata.has_decrypted_txs = true;
                 match tx_queue_iter.next() {
                     Some(wrapper) => {
-                        if wrapper.tx.raw_header_hash() != tx.raw_header_hash()
+                        if wrapper.tx.decrypted_header_hash()
+                            != tx.decrypted_header_hash()
                         {
                             TxResult {
                                 code: ErrorCodes::InvalidOrder.into(),
@@ -2190,7 +2191,7 @@ mod test_process_proposal {
                     format!(
                         "Transaction replay attempt: Inner transaction hash \
                          {} already in storage",
-                        wrapper.raw_header_hash()
+                        wrapper.decrypted_header_hash()
                     )
                 );
             }
@@ -2226,7 +2227,7 @@ mod test_process_proposal {
         )));
 
         // Write inner hash to storage
-        let inner_unsigned_hash = wrapper.raw_header_hash();
+        let inner_unsigned_hash = wrapper.decrypted_header_hash();
         let hash_key =
             replay_protection::get_replay_protection_key(&inner_unsigned_hash);
         shell
@@ -2287,7 +2288,7 @@ mod test_process_proposal {
             [(0, keypair)].into_iter().collect(),
             None,
         )));
-        let inner_unsigned_hash = wrapper.raw_header_hash();
+        let inner_unsigned_hash = wrapper.decrypted_header_hash();
 
         new_wrapper.update_header(TxType::Wrapper(Box::new(WrapperTx::new(
             Fee {

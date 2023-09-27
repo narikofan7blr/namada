@@ -1239,10 +1239,10 @@ impl Tx {
         Section::Header(self.header.clone()).get_hash()
     }
 
-    /// Gets the hash of the raw transaction's header
-    pub fn raw_header_hash(&self) -> crate::types::hash::Hash {
+    /// Gets the hash of the decrypted transaction's header
+    pub fn decrypted_header_hash(&self) -> crate::types::hash::Hash {
         let mut raw_header = self.header();
-        raw_header.tx_type = TxType::Raw;
+        raw_header.tx_type = TxType::Decrypted(DecryptedTx::Decrypted);
 
         Section::Header(raw_header).get_hash()
     }
@@ -1260,13 +1260,6 @@ impl Tx {
     ) -> Option<Cow<Section>> {
         if self.header_hash() == *hash {
             return Some(Cow::Owned(Section::Header(self.header.clone())));
-        }
-        if self.raw_header_hash() == *hash {
-            // Raw transaction header for signature verification
-            let mut raw_header = self.header();
-            raw_header.tx_type = TxType::Raw;
-
-            return Some(Cow::Owned(Section::Header(raw_header)));
         }
         for section in &self.sections {
             if section.get_hash() == *hash {
@@ -1737,7 +1730,7 @@ impl Tx {
         self.protocol_filter();
 
         self.add_section(Section::Signature(Signature::new(
-            self.raw_header_hash(),
+            self.decrypted_header_hash(),
             account_public_keys_map.index_secret_keys(keypairs),
             signer,
         )));
@@ -1751,7 +1744,7 @@ impl Tx {
     ) -> &mut Self {
         self.protocol_filter();
         let mut pk_section = Signature {
-            target: self.raw_header_hash(),
+            target: self.decrypted_header_hash(),
             signatures: BTreeMap::new(),
             signer: Signer::PubKeys(vec![]),
         };
@@ -1762,7 +1755,7 @@ impl Tx {
                 // Add the signature under the given multisig address
                 let section =
                     sections.entry(addr.clone()).or_insert_with(|| Signature {
-                        target: self.raw_header_hash(),
+                        target: self.decrypted_header_hash(),
                         signatures: BTreeMap::new(),
                         signer: Signer::Address(addr.clone()),
                     });
