@@ -15,6 +15,7 @@ use namada::core::ledger::governance::cli::onchain::{
 use namada::ledger::pos;
 use namada::proof_of_stake::parameters::PosParams;
 use namada::proto::Tx;
+use namada::sdk::eth_bridge::bridge_pool;
 use namada::sdk::rpc::{TxBroadcastData, TxResponse};
 use namada::sdk::wallet::{Wallet, WalletUtils};
 use namada::sdk::{error, masp, signing, tx};
@@ -132,6 +133,54 @@ pub async fn submit_reveal_aux<
             tx::process_tx::<_, _, IO>(client, &mut ctx.wallet, &args, tx)
                 .await?;
         }
+    }
+
+    Ok(())
+}
+
+pub async fn submit_bridge_pool_tx<C, IO: Io>(
+    client: &C,
+    ctx: &mut Context,
+    args: args::EthereumBridgePool,
+) -> Result<(), error::Error>
+where
+    C: namada::ledger::queries::Client + Sync,
+    C::Error: std::fmt::Display,
+{
+    let tx_args = args.tx.clone();
+
+    let default_signer = Some(args.sender.clone());
+    let signing_data = aux_signing_data::<_, IO>(
+        client,
+        &mut ctx.wallet,
+        &args.tx,
+        Some(args.sender.clone()),
+        default_signer,
+    )
+    .await?;
+
+    let (mut tx, _epoch) = bridge_pool::build_bridge_pool_tx::<_, _, _, IO>(
+        client,
+        &mut ctx.wallet,
+        &mut ctx.shielded,
+        args.clone(),
+        signing_data.fee_payer.clone(),
+    )
+    .await?;
+
+    signing::generate_test_vector::<_, _, IO>(client, &mut ctx.wallet, &tx)
+        .await?;
+
+    if args.tx.dump_tx {
+        tx::dump_tx::<IO>(&args.tx, tx);
+    } else {
+        submit_reveal_aux::<_, IO>(client, ctx, tx_args.clone(), &args.sender)
+            .await?;
+
+        signing::sign_tx(&mut ctx.wallet, &tx_args, &mut tx, signing_data)?;
+
+        tx::process_tx::<_, _, IO>(client, &mut ctx.wallet, &tx_args, tx)
+            .await?;
     }
 
     Ok(())
