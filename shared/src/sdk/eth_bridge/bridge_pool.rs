@@ -9,6 +9,7 @@ use borsh::BorshSerialize;
 use ethbridge_bridge_contract::Bridge;
 use ethers::providers::Middleware;
 use namada_core::ledger::eth_bridge::storage::wrapped_erc20s;
+use namada_core::types::ethereum_events::EthAddress;
 use namada_core::types::key::common;
 use namada_core::types::storage::Epoch;
 use owo_colors::OwoColorize;
@@ -66,18 +67,74 @@ pub async fn build_bridge_pool_tx<
     }: args::EthereumBridgePool,
     wrapper_fee_payer: common::PublicKey,
 ) -> Result<(Tx, Option<Epoch>), Error> {
-    let fee_payer = fee_payer.unwrap_or_else(|| sender.clone());
+    let (transfer, tx_code_hash) = futures::try_join!(
+        validate_bridge_pool_tx::<_, IO>(
+            client,
+            tx_args.force,
+            nut,
+            asset,
+            recipient,
+            sender,
+            amount,
+            fee_amount,
+            fee_payer,
+            fee_token,
+        ),
+        query_wasm_code_hash::<_, IO>(client, code_path.to_string_lossy()),
+    )?;
+
+    let chain_id = tx_args
+        .chain_id
+        .clone()
+        .ok_or_else(|| Error::Other("No chain id available".into()))?;
+
+    let mut tx = Tx::new(chain_id, tx_args.expiration);
+    tx.add_code_from_hash(tx_code_hash).add_data(transfer);
+
+    let epoch = prepare_tx::<C, U, V, IO>(
+        client,
+        wallet,
+        shielded,
+        &tx_args,
+        &mut tx,
+        wrapper_fee_payer,
+        None,
+    )
+    .await?;
+
+    Ok((tx, epoch))
+}
+
+/// Perform client validation checks on a Bridge pool transfer.
+#[allow(clippy::too_many_arguments)]
+async fn validate_bridge_pool_tx<C, IO>(
+    client: &C,
+    force: bool,
+    nut: bool,
+    asset: EthAddress,
+    recipient: EthAddress,
+    sender: Address,
+    amount: args::InputAmount,
+    fee_amount: args::InputAmount,
+    fee_payer: Option<Address>,
+    fee_token: Address,
+) -> Result<PendingTransfer, Error>
+where
+    C: crate::ledger::queries::Client + Sync,
+    IO: Io,
+{
     let DenominatedAmount { amount, .. } = validate_amount::<_, IO>(
         client,
         amount,
         &wrapped_erc20s::token(&asset),
-        tx_args.force,
+        force,
     )
     .await
     .map_err(|e| Error::Other(format!("Failed to validate amount. {}", e)))?;
+
     let DenominatedAmount {
         amount: fee_amount, ..
-    } = validate_amount::<_, IO>(client, fee_amount, &fee_token, tx_args.force)
+    } = validate_amount::<_, IO>(client, fee_amount, &fee_token, force)
         .await
         .map_err(|e| {
             Error::Other(format!(
@@ -85,6 +142,8 @@ pub async fn build_bridge_pool_tx<
                 e
             ))
         })?;
+
+    let fee_payer = fee_payer.unwrap_or_else(|| sender.clone());
     let transfer = PendingTransfer {
         transfer: TransferToEthereum {
             asset,
@@ -104,31 +163,11 @@ pub async fn build_bridge_pool_tx<
         },
     };
 
-    let tx_code_hash =
-        query_wasm_code_hash::<_, IO>(client, code_path.to_string_lossy())
-            .await?;
+    // if force {
+    //    return Ok(transfer);
+    //}
 
-    let chain_id = tx_args
-        .chain_id
-        .clone()
-        .ok_or_else(|| Error::Other("No chain id available".into()))?;
-    let mut tx = Tx::new(chain_id, tx_args.expiration);
-    tx.add_code_from_hash(tx_code_hash).add_data(transfer);
-
-    // TODO(namada#1800): validate the tx on the client side
-
-    let epoch = prepare_tx::<C, U, V, IO>(
-        client,
-        wallet,
-        shielded,
-        &tx_args,
-        &mut tx,
-        wrapper_fee_payer,
-        None,
-    )
-    .await?;
-
-    Ok((tx, epoch))
+    Ok(transfer)
 }
 
 /// A json serializable representation of the Ethereum
@@ -998,7 +1037,6 @@ mod recommendations {
     #[cfg(test)]
     mod test_recommendations {
         use namada_core::types::address::Address;
-        use namada_core::types::ethereum_events::EthAddress;
 
         use super::*;
         use crate::types::io::DefaultIo;
