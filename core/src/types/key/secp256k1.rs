@@ -12,11 +12,13 @@ use data_encoding::HEXLOWER;
 use ethabi::Token;
 use k256::ecdsa::RecoveryId;
 use k256::elliptic_curve::sec1::ToEncodedPoint;
+use k256::elliptic_curve::ScalarPrimitive;
 #[cfg(feature = "rand")]
 use rand::{CryptoRng, RngCore};
 use serde::de::{Error, SeqAccess, Visitor};
 use serde::ser::SerializeTuple;
 use serde::{Deserialize, Serialize, Serializer};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use super::{
     ParsePublicKeyError, ParseSecretKeyError, ParseSignatureError, RefTo,
@@ -166,6 +168,20 @@ impl From<&PublicKey> for EthAddress {
 /// Secp256k1 secret key
 #[derive(Debug, Clone)]
 pub struct SecretKey(pub Box<k256::SecretKey>);
+
+impl Zeroize for SecretKey {
+    fn zeroize(&mut self) {
+        let scalar: &mut ScalarPrimitive<k256::Secp256k1> = unsafe {
+            // SAFETY: a k256 secret key is just
+            // a wrapper around a scalar value, which itself
+            // is a wrapper around a U256
+            std::mem::transmute(&mut *self.0)
+        };
+        scalar.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for SecretKey {}
 
 impl super::SecretKey for SecretKey {
     type PublicKey = PublicKey;
