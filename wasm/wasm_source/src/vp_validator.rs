@@ -63,9 +63,8 @@ fn validate_tx(
         verifiers
     );
 
-    let valid_sig = Lazy::new(|| {
-        matches!(verify_signatures(ctx, &tx_data, &addr), Ok(true))
-    });
+    let valid_sig =
+        Lazy::new(|| verify_signatures(ctx, &tx_data, &addr).is_ok());
 
     if !is_valid_tx(ctx, &tx_data)? {
         return reject();

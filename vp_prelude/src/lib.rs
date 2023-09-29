@@ -79,8 +79,7 @@ pub fn is_proposal_accepted(ctx: &Ctx, proposal_id: u64) -> VpResult {
 }
 
 /// Verify section signatures
-// FIXME: this shall not be a VpResult
-pub fn verify_signatures(ctx: &Ctx, tx: &Tx, owner: &Address) -> VpResult {
+pub fn verify_signatures(ctx: &Ctx, tx: &Tx, owner: &Address) -> EnvResult<()> {
     let max_signatures_per_transaction =
         parameters::max_signatures_per_transaction(&ctx.pre())?;
 
@@ -111,7 +110,7 @@ pub fn verify_signatures(ctx: &Ctx, tx: &Tx, owner: &Address) -> VpResult {
         )
     };
 
-    Ok(true)
+    Ok(())
 }
 
 /// Checks whether a transaction is valid, which happens in two cases:
