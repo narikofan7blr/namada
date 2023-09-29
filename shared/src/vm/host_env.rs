@@ -485,8 +485,8 @@ where
     let gas_meter = unsafe { env.ctx.gas_meter.get() };
     // if we run out of gas, we need to stop the execution
     gas_meter.consume(used_gas).map_err(|err| {
-        let sentinels = unsafe { env.ctx.out_of_gas.get() };
-        *sentinels = true;
+        let sentinel = unsafe { env.ctx.out_of_gas.get() };
+        *sentinel = true;
         tracing::info!(
             "Stopping transaction execution because of gas error: {}",
             err
