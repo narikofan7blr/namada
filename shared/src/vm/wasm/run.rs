@@ -560,6 +560,8 @@ where
 
 /// Get the gas rules used to meter wasm operations
 fn get_gas_rules() -> wasm_instrument::gas_metering::ConstantCostRules {
+    // NOTE: costs set to 0 don't actually trigger the injection of a call to
+    // the gas host function (no useless instructions are injected)
     let instruction_cost = 0;
     let memory_grow_cost = WASM_MEMORY_PAGE_GAS_COST;
     let call_per_local_cost = 0;
