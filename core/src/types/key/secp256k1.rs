@@ -421,12 +421,17 @@ impl BorshSchema for Signature {
 }
 
 impl Signature {
+    /// OpenZeppelin consumes v values in the range [27, 28],
+    /// rather than [0, 1], the latter returned by `k256`.
     const V_FIX: u8 = 27;
 
-    // assuming the value of v is either 0 or 1,
-    // the output is essentially the negated input
+    /// Given a v signature parameter, flip its value
+    /// (i.e. negate the input).
+    ///
+    /// __INVARIANT__: The value of `v` must be in the range [0, 1].
     #[inline(always)]
     fn flip_v(v: u8) -> u8 {
+        debug_assert!(v == 0 || v == 1);
         v ^ 1
     }
 
@@ -436,16 +441,22 @@ impl Signature {
     /// The returned signature is unique (i.e. non-malleable). This
     /// ensures OpenZeppelin considers the signature valid.
     pub fn into_eth_rsv(self) -> ([u8; 32], [u8; 32], u8) {
-        let normalized = self.0.normalize_s();
-        let is_normalized = normalized.is_some();
-        let sig = normalized.unwrap_or(self.0);
-        // The low-bit signifies the y-coordinate being odd
+        // A recovery id (dubbed v) is used by secp256k1 signatures
+        // to signal verifying code if a signature had been malleable
+        // or not (based on whether the s field of the signature was odd
+        // or not). In the `k256` dependency, the low-bit signifies the
+        // y-coordinate, associated with s, being odd.
         let v = self.1.to_byte() & 1;
-        (
-            sig.r().to_bytes().into(),
-            sig.s().to_bytes().into(),
-            (if is_normalized { v } else { Self::flip_v(v) } + Self::V_FIX),
-        )
+        // Check if s needs to be normalized. In case it does,
+        // we must flip the value of v (e.g. 0 -> 1).
+        let (s, v) = if let Some(signature) = self.0.normalize_s() {
+            let normalized_s = signature.s();
+            (normalized_s, Self::flip_v(v))
+        } else {
+            (self.0.s(), v)
+        };
+        let r = self.0.r();
+        (r.to_bytes().into(), s.to_bytes().into(), v + Self::V_FIX)
     }
 }
 
@@ -549,9 +560,10 @@ impl super::SigScheme for SigScheme {
         H: 'static + StorageHasher,
     {
         let sig_key = k256::ecdsa::SigningKey::from(keypair.0.as_ref());
-        let msg = &data.signable_hash::<H>();
-        let (sig, recovery_id) =
-            sig_key.sign_recoverable(msg).expect("Must be able to sign");
+        let msg = data.signable_hash::<H>();
+        let (sig, recovery_id) = sig_key
+            .sign_prehash_recoverable(&msg)
+            .expect("Must be able to sign");
         Signature(sig, recovery_id)
     }
 
@@ -563,11 +575,11 @@ impl super::SigScheme for SigScheme {
     where
         H: 'static + StorageHasher,
     {
-        use k256::ecdsa::signature::Verifier;
+        use k256::ecdsa::signature::hazmat::PrehashVerifier;
 
         let vrf_key = k256::ecdsa::VerifyingKey::from(&pk.0);
         let msg = data.signable_hash::<H>();
-        vrf_key.verify(&msg, &sig.0).map_err(|e| {
+        vrf_key.verify_prehash(&msg, &sig.0).map_err(|e| {
             VerifySigError::SigVerifyError(format!(
                 "Error verifying secp256k1 signature: {}",
                 e
