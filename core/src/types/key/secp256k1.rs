@@ -151,8 +151,6 @@ impl From<&PublicKey> for EthAddress {
         use tiny_keccak::Hasher;
 
         let mut hasher = tiny_keccak::Keccak::v256();
-        // We're removing the first byte with
-        // `libsecp256k1::util::TAG_PUBKEY_FULL`
         let pk_bytes = &pk.0.to_encoded_point(false).to_bytes()[1..];
         hasher.update(pk_bytes);
         let mut output = [0_u8; 32];
