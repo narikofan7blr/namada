@@ -421,17 +421,30 @@ impl BorshSchema for Signature {
 }
 
 impl Signature {
+    const V_FIX: u8 = 27;
+
+    // assuming the value of v is either 0 or 1,
+    // the output is essentially the negated input
+    #[inline(always)]
+    fn flip_v(v: u8) -> u8 {
+        v ^ 1
+    }
+
     /// Returns the `r`, `s` and `v` parameters of this [`Signature`],
     /// destroying the original value in the process.
     ///
     /// The returned signature is unique (i.e. non-malleable). This
     /// ensures OpenZeppelin considers the signature valid.
     pub fn into_eth_rsv(self) -> ([u8; 32], [u8; 32], u8) {
-        let sig = self.0.normalize_s().unwrap_or(self.0);
+        let normalized = self.0.normalize_s();
+        let is_normalized = normalized.is_some();
+        let sig = normalized.unwrap_or(self.0);
+        // The low-bit signifies the y-coordinate being odd
+        let v = self.1.to_byte() & 1;
         (
             sig.r().to_bytes().into(),
             sig.s().to_bytes().into(),
-            self.1.to_byte(),
+            (if is_normalized { v } else { Self::flip_v(v) } + Self::V_FIX),
         )
     }
 }
